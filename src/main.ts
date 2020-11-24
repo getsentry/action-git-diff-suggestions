@@ -47,59 +47,67 @@ async function run(): Promise<void> {
   const patches = parseGitPatch(gitDiffOutput);
 
   if (patches.length) {
-    await octokit.pulls.deletePendingReview({
-      owner,
-      repo,
-      // @ts-ignore
-      pull_number: github.context.payload.pull_request?.number,
-      review_id: 537023988,
-    });
-    console.log(
-      await octokit.pulls.listReviews({
-        owner,
-        repo,
-        // @ts-ignore
-        pull_number: github.context.payload.pull_request?.number,
-      })
-    );
-    const promises = patches.map(async patch =>
-      octokit.pulls.createReviewComment({
-        owner,
-        repo,
-        // @ts-ignore
-        pull_number: github.context.payload.pull_request?.number,
-        body: `
+    // await octokit.pulls.deletePendingReview({
+    // owner,
+    // repo,
+    // // @ts-ignore
+    // pull_number: github.context.payload.pull_request?.number,
+    // review_id: 537023988,
+    // });
+    // console.log(
+    // await octokit.pulls.listReviews({
+    // owner,
+    // repo,
+    // // @ts-ignore
+    // pull_number: github.context.payload.pull_request?.number,
+    // })
+    // );
+
+    for (const patch of patches) {
+      try {
+        const resp = await octokit.pulls.createReviewComment({
+          owner,
+          repo,
+          // @ts-ignore
+          pull_number: github.context.payload.pull_request?.number,
+          body: `
 Something magical has suggested this change for you:
 
 \`\`\`suggestion
 ${patch.added.lines.join('\n')}
 \`\`\`
 `,
-        commit_id: GITHUB_EVENT.pull_request?.head.sha,
-        path: patch.removed.file,
-        side: 'RIGHT',
-        start_side: 'RIGHT',
-        start_line:
-          patch.removed.start !== patch.removed.end
-            ? patch.removed.start
-            : undefined,
-        line: patch.removed.end,
-        mediaType: {
-          previews: ['comfort-fade'],
-        },
-      })
-    );
-
-    try {
-      const responses = await Promise.all(promises);
-      responses.forEach(resp => {
+          commit_id: GITHUB_EVENT.pull_request?.head.sha,
+          path: patch.removed.file,
+          side: 'RIGHT',
+          start_side: 'RIGHT',
+          start_line:
+            patch.removed.start !== patch.removed.end
+              ? patch.removed.start
+              : undefined,
+          line: patch.removed.end,
+          mediaType: {
+            previews: ['comfort-fade'],
+          },
+        });
         core.startGroup('patch debug');
         core.debug(JSON.stringify(resp, null, 2));
         core.endGroup();
-      });
-    } catch (err) {
-      core.error(err);
+      } catch (err) {
+        core.error(err);
+      }
     }
+
+    // for (const promise of promises) {
+    // try {
+    // const resp = await promise;
+    // core.startGroup('patch debug');
+    // core.debug(JSON.stringify(resp, null, 2));
+    // core.endGroup();
+    // } catch (err) {
+    // core.error(err);
+    // }
+    // }
   }
 }
 run();
