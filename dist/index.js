@@ -47,6 +47,7 @@ const octokit = token && github.getOctokit(token);
 // @ts-ignore
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         if (!octokit) {
             core.debug('No octokit client');
@@ -77,38 +78,50 @@ function run() {
             core.setFailed(gitDiffError);
         }
         const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
-        patches.forEach((patch) => __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
-            core.startGroup('patch debug');
-            core.debug(`${patch.removed.start}`);
-            core.debug(`${patch.removed.end}`);
-            const resp = yield octokit.pulls.createReviewComment({
+        if (patches.length) {
+            const review = yield octokit.pulls.createReview({
                 owner,
                 repo,
                 // @ts-ignore
                 pull_number: (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
-                body: `
+            });
+            core.startGroup('createReview');
+            core.debug(JSON.stringify(review, null, 2));
+            core.endGroup();
+            patches.forEach((patch) => __awaiter(this, void 0, void 0, function* () {
+                var _b, _c;
+                core.startGroup('patch debug');
+                core.debug(`${patch.removed.start}`);
+                core.debug(`${patch.removed.end}`);
+                const resp = yield octokit.pulls.createReviewComment({
+                    owner,
+                    repo,
+                    // @ts-ignore
+                    pull_number: (_b = github.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
+                    pull_request_review_id: review.data.id,
+                    body: `
 Something magical has suggested this change for you:
 
 \`\`\`suggestion
 ${patch.added.lines.join('\n')}
 \`\`\`
 `,
-                commit_id: (_b = GITHUB_EVENT.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha,
-                path: patch.removed.file,
-                side: 'RIGHT',
-                start_side: 'RIGHT',
-                start_line: patch.removed.start !== patch.removed.end
-                    ? patch.removed.start
-                    : undefined,
-                line: patch.removed.end,
-                mediaType: {
-                    previews: ['comfort-fade'],
-                },
-            });
-            core.debug(JSON.stringify(resp, null, 2));
-            core.endGroup();
-        }));
+                    commit_id: (_c = GITHUB_EVENT.pull_request) === null || _c === void 0 ? void 0 : _c.head.sha,
+                    path: patch.removed.file,
+                    side: 'RIGHT',
+                    start_side: 'RIGHT',
+                    start_line: patch.removed.start !== patch.removed.end
+                        ? patch.removed.start
+                        : undefined,
+                    line: patch.removed.end,
+                    mediaType: {
+                        previews: ['comfort-fade'],
+                    },
+                });
+                core.debug(JSON.stringify(resp, null, 2));
+                core.endGroup();
+            }));
+        }
     });
 }
 run();
