@@ -47,7 +47,7 @@ const octokit = token && github.getOctokit(token);
 // @ts-ignore
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 function run() {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         if (!octokit) {
             core.debug('No octokit client');
@@ -79,26 +79,26 @@ function run() {
         }
         const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
         if (patches.length) {
-            console.log(yield octokit.pulls.listReviews({
+            yield octokit.pulls.deletePendingReview({
                 owner,
                 repo,
                 // @ts-ignore
                 pull_number: (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
+                review_id: 537023988,
+            });
+            console.log(yield octokit.pulls.listReviews({
+                owner,
+                repo,
+                // @ts-ignore
+                pull_number: (_b = github.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
             }));
-            // await octokit.pulls.deletePendingReview({
-            // owner,
-            // repo,
-            // // @ts-ignore
-            // pull_number: github.context.payload.pull_request?.number,
-            // review_id,
-            // });
             const promises = patches.map((patch) => __awaiter(this, void 0, void 0, function* () {
-                var _b, _c;
+                var _c, _d;
                 return octokit.pulls.createReviewComment({
                     owner,
                     repo,
                     // @ts-ignore
-                    pull_number: (_b = github.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
+                    pull_number: (_c = github.context.payload.pull_request) === null || _c === void 0 ? void 0 : _c.number,
                     body: `
 Something magical has suggested this change for you:
 
@@ -106,7 +106,7 @@ Something magical has suggested this change for you:
 ${patch.added.lines.join('\n')}
 \`\`\`
 `,
-                    commit_id: (_c = GITHUB_EVENT.pull_request) === null || _c === void 0 ? void 0 : _c.head.sha,
+                    commit_id: (_d = GITHUB_EVENT.pull_request) === null || _d === void 0 ? void 0 : _d.head.sha,
                     path: patch.removed.file,
                     side: 'RIGHT',
                     start_side: 'RIGHT',

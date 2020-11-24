@@ -47,6 +47,13 @@ async function run(): Promise<void> {
   const patches = parseGitPatch(gitDiffOutput);
 
   if (patches.length) {
+    await octokit.pulls.deletePendingReview({
+      owner,
+      repo,
+      // @ts-ignore
+      pull_number: github.context.payload.pull_request?.number,
+      review_id: 537023988,
+    });
     console.log(
       await octokit.pulls.listReviews({
         owner,
@@ -55,14 +62,6 @@ async function run(): Promise<void> {
         pull_number: github.context.payload.pull_request?.number,
       })
     );
-
-    // await octokit.pulls.deletePendingReview({
-    // owner,
-    // repo,
-    // // @ts-ignore
-    // pull_number: github.context.payload.pull_request?.number,
-    // review_id,
-    // });
     const promises = patches.map(async patch =>
       octokit.pulls.createReviewComment({
         owner,
