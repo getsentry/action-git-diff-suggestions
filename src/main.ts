@@ -68,6 +68,9 @@ ${patch.added.lines.join('\n')}
       start_side: 'RIGHT',
       start_line: patch.removed.start,
       line: patch.removed.end,
+      mediaType: {
+        previews: ['comfort-fade'],
+      },
     });
 
     core.debug(JSON.stringify(resp, null, 2));
