@@ -1,10 +1,6 @@
-name: 'Your name here'
-description: 'Provide a description here'
+name: 'action-git-diff-suggestions'
+description: 'This GitHub Action will take the current git changes and apply them as GitHub code review suggestions'
 author: 'Sentry'
-inputs:
-  myInput:              # change this
-    description: 'input description here'
-    default: 'default value if applicable'
 runs:
   using: 'node12'
   main: 'dist/index.js'
