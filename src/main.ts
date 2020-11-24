@@ -47,26 +47,12 @@ async function run(): Promise<void> {
   const patches = parseGitPatch(gitDiffOutput);
 
   if (patches.length) {
-    const review = await octokit.pulls.createReview({
-      owner,
-      repo,
-      // @ts-ignore
-      pull_number: github.context.payload.pull_request?.number,
-    });
-    core.startGroup('createReview');
-    core.debug(JSON.stringify(review, null, 2));
-    core.endGroup();
-
-    patches.forEach(async patch => {
-      core.startGroup('patch debug');
-      core.debug(`${patch.removed.start}`);
-      core.debug(`${patch.removed.end}`);
-      const resp = await octokit.pulls.createReviewComment({
+    const promises = patches.map(async patch =>
+      octokit.pulls.createReviewComment({
         owner,
         repo,
         // @ts-ignore
         pull_number: github.context.payload.pull_request?.number,
-        pull_request_review_id: review.data.id,
         body: `
 Something magical has suggested this change for you:
 
@@ -86,11 +72,19 @@ ${patch.added.lines.join('\n')}
         mediaType: {
           previews: ['comfort-fade'],
         },
-      });
+      })
+    );
 
-      core.debug(JSON.stringify(resp, null, 2));
-      core.endGroup();
-    });
+    try {
+      const responses = await Promise.all(promises);
+      responses.forEach(resp => {
+        core.startGroup('patch debug');
+        core.debug(JSON.stringify(resp, null, 2));
+        core.endGroup();
+      });
+    } catch (err) {
+      core.error(err);
+    }
   }
 }
 run();
