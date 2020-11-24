@@ -128,7 +128,7 @@ function parseGitPatch(patch) {
             currentFiles = [matches[1], matches[2]];
             return;
         }
-        const patchMatches = line.match(/^@@ -(\d+),(\d+) \+(\d+),(\d+) @@/);
+        const patchMatches = line.match(/^@@ -(\d+)(?:,|)(\d*) \+(\d+)(?:,|)(\d*) @@/);
         if (patchMatches) {
             // push old patch
             if (currentPatch) {

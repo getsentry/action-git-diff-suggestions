@@ -16,7 +16,9 @@ export function parseGitPatch(patch: string): Patch[] {
       return;
     }
 
-    const patchMatches = line.match(/^@@ -(\d+),(\d+) \+(\d+),(\d+) @@/);
+    const patchMatches = line.match(
+      /^@@ -(\d+)(?:,|)(\d*) \+(\d+)(?:,|)(\d*) @@/
+    );
 
     if (patchMatches) {
       // push old patch
