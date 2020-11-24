@@ -77,9 +77,9 @@ function run() {
             core.setFailed(gitDiffError);
         }
         const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
-        patches.forEach(patch => {
+        patches.forEach((patch) => __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
-            octokit.pulls.createReviewComment({
+            const resp = yield octokit.pulls.createReviewComment({
                 owner,
                 repo,
                 // @ts-ignore
@@ -98,7 +98,10 @@ ${patch.added.lines.join('\n')}
                 start_line: patch.removed.start,
                 line: patch.removed.end,
             });
-        });
+            core.startGroup('patch debug');
+            core.debug(JSON.stringify(resp, null, 2));
+            core.endGroup();
+        }));
     });
 }
 run();

@@ -46,8 +46,8 @@ async function run(): Promise<void> {
 
   const patches = parseGitPatch(gitDiffOutput);
 
-  patches.forEach(patch => {
-    octokit.pulls.createReviewComment({
+  patches.forEach(async patch => {
+    const resp = await octokit.pulls.createReviewComment({
       owner,
       repo,
       // @ts-ignore
@@ -66,6 +66,10 @@ ${patch.added.lines.join('\n')}
       start_line: patch.removed.start,
       line: patch.removed.end,
     });
+
+    core.startGroup('patch debug');
+    core.debug(JSON.stringify(resp, null, 2));
+    core.endGroup();
   });
 }
 
