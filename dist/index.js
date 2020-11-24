@@ -36,7 +36,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const fs_1 = __webpack_require__(5747);
 const github = __importStar(__webpack_require__(5438));
 const core = __importStar(__webpack_require__(2186));
 const exec_1 = __webpack_require__(1514);
@@ -47,7 +46,6 @@ const token = core.getInput('github-token') || core.getInput('githubToken');
 const octokit = token && github.getOctokit(token);
 // @ts-ignore
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
-const PATCH = '/tmp/__git_patch';
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         if (!octokit) {
@@ -58,14 +56,27 @@ function run() {
             core.debug('Requires a pull request');
             return;
         }
+        let gitDiffOutput = '';
+        let gitDiffError = '';
         try {
-            yield exec_1.exec(`git diff -U0 --color=never > ${PATCH}`);
+            yield exec_1.exec('git', ['diff', '-U0', '--color=never'], {
+                listeners: {
+                    stdout: (data) => {
+                        gitDiffOutput += data.toString();
+                    },
+                    stderr: (data) => {
+                        gitDiffError += data.toString();
+                    },
+                },
+            });
         }
         catch (error) {
             core.setFailed(error.message);
         }
-        const patchDiff = yield fs_1.promises.readFile(PATCH);
-        const patches = parseGitPatch_1.parseGitPatch(patchDiff.toString());
+        if (gitDiffError) {
+            core.setFailed(gitDiffError);
+        }
+        const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
         patches.forEach(patch => {
             var _a, _b;
             octokit.pulls.createReviewComment({

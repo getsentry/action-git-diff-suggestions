@@ -1,6 +1,9 @@
 name: 'action-git-diff-suggestions'
 description: 'This GitHub Action will take the current git changes and apply them as GitHub code review suggestions'
 author: 'Sentry'
+inputs:
+  github-token:
+    description: 'github token'
 runs:
   using: 'node12'
   main: 'dist/index.js'

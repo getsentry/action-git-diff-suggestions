@@ -1,5 +1,3 @@
-import {promises as fs} from 'fs';
-
 import * as github from '@actions/github';
 import * as core from '@actions/core';
 import {exec} from '@actions/exec';
@@ -12,7 +10,6 @@ const token = core.getInput('github-token') || core.getInput('githubToken');
 const octokit = token && github.getOctokit(token);
 // @ts-ignore
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
-const PATCH = '/tmp/__git_patch';
 
 async function run(): Promise<void> {
   if (!octokit) {
@@ -25,14 +22,29 @@ async function run(): Promise<void> {
     return;
   }
 
+  let gitDiffOutput = '';
+  let gitDiffError = '';
+
   try {
-    await exec(`git diff -U0 --color=never > ${PATCH}`);
+    await exec('git', ['diff', '-U0', '--color=never'], {
+      listeners: {
+        stdout: (data: Buffer) => {
+          gitDiffOutput += data.toString();
+        },
+        stderr: (data: Buffer) => {
+          gitDiffError += data.toString();
+        },
+      },
+    });
   } catch (error) {
     core.setFailed(error.message);
   }
 
-  const patchDiff = await fs.readFile(PATCH);
-  const patches = parseGitPatch(patchDiff.toString());
+  if (gitDiffError) {
+    core.setFailed(gitDiffError);
+  }
+
+  const patches = parseGitPatch(gitDiffOutput);
 
   patches.forEach(patch => {
     octokit.pulls.createReviewComment({
