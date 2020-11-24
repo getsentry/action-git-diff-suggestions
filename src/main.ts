@@ -66,7 +66,10 @@ ${patch.added.lines.join('\n')}
       path: patch.removed.file,
       side: 'RIGHT',
       start_side: 'RIGHT',
-      start_line: patch.removed.start,
+      start_line:
+        patch.removed.start !== patch.removed.end
+          ? patch.removed.start
+          : undefined,
       line: patch.removed.end,
       mediaType: {
         previews: ['comfort-fade'],
