@@ -1,8 +1,9 @@
 name: action-git-diff-suggestions
 description: This GitHub Action will take the current git changes and apply them as GitHub code review suggestions
 author: Sentry
-icon: book-open
-color: purple
+branding:
+  icon: book-open
+  color: purple
 inputs:
   github-token:
     description: github token
