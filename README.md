@@ -23,11 +23,10 @@ See the [Sentry repo](https://github.com/getsentry/sentry/tree/master/.github/wo
 ### Example
 
 ```yaml
-  - uses: getsentry/action-git-diff-suggestions@main
-    with:
-      message: 'eslint made the following change'
-      github-token: ${{ secrets.GITHUB_TOKEN }}
-
+- uses: getsentry/action-git-diff-suggestions@main
+  with:
+    message: 'eslint made the following change'
+    github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Full example
