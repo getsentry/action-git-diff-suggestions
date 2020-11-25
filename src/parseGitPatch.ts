@@ -1,5 +1,11 @@
 import {Patch} from './types';
 
+/**
+ * TODO: Look into using a package on npm for this
+ *
+ * gitdiff-parser seems like it would fit our usage the best,
+ * but maybe just our simple parsing is good enough here.
+ */
 export function parseGitPatch(patch: string): Patch[] {
   const lines = patch.split('\n');
 

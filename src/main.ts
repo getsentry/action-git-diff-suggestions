@@ -21,6 +21,9 @@ async function run(): Promise<void> {
     core.debug('Requires a pull request');
     return;
   }
+  const commentBody =
+    core.getInput('message') ||
+    'Something magical has suggested this change for you';
 
   let gitDiffOutput = '';
   let gitDiffError = '';
@@ -47,22 +50,31 @@ async function run(): Promise<void> {
   const patches = parseGitPatch(gitDiffOutput);
 
   if (patches.length) {
-    // await octokit.pulls.deletePendingReview({
-    // owner,
-    // repo,
-    // // @ts-ignore
-    // pull_number: github.context.payload.pull_request?.number,
-    // review_id: 537023988,
-    // });
-    // console.log(
-    // await octokit.pulls.listReviews({
-    // owner,
-    // repo,
-    // // @ts-ignore
-    // pull_number: github.context.payload.pull_request?.number,
-    // })
-    // );
+    // Delete existing review comments from this bot
+    const existingReviews = await octokit.pulls.listReviews({
+      owner,
+      repo,
+      // @ts-ignore
+      pull_number: github.context.payload.pull_request?.number,
+    });
 
+    await Promise.all(
+      existingReviews.data
+        .filter(
+          review =>
+            review.user.login === 'github-actions[bot]' &&
+            review.body.includes(commentBody)
+        )
+        .map(async review =>
+          octokit.pulls.deleteReviewComment({
+            owner,
+            repo,
+            comment_id: review.id,
+          })
+        )
+    );
+
+    // Need to do this serially, otherwise face API errors from GitHub about having multiple pending review requests
     for (const patch of patches) {
       try {
         const resp = await octokit.pulls.createReviewComment({
@@ -71,7 +83,7 @@ async function run(): Promise<void> {
           // @ts-ignore
           pull_number: github.context.payload.pull_request?.number,
           body: `
-Something magical has suggested this change for you:
+${commentBody}:
 
 \`\`\`suggestion
 ${patch.added.lines.join('\n')}
@@ -97,17 +109,6 @@ ${patch.added.lines.join('\n')}
         core.error(err);
       }
     }
-
-    // for (const promise of promises) {
-    // try {
-    // const resp = await promise;
-    // core.startGroup('patch debug');
-    // core.debug(JSON.stringify(resp, null, 2));
-    // core.endGroup();
-    // } catch (err) {
-    // core.error(err);
-    // }
-    // }
   }
 }
 run();

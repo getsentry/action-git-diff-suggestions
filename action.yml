@@ -4,6 +4,8 @@ author: 'Sentry'
 inputs:
   github-token:
     description: 'github token'
+  message:
+    description: 'The message to prepend the review suggestion'
 runs:
   using: 'node12'
   main: 'dist/index.js'

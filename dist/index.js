@@ -47,7 +47,7 @@ const octokit = token && github.getOctokit(token);
 // @ts-ignore
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 function run() {
-    var _a, _b;
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         if (!octokit) {
             core.debug('No octokit client');
@@ -57,6 +57,8 @@ function run() {
             core.debug('Requires a pull request');
             return;
         }
+        const commentBody = core.getInput('message') ||
+            'Something magical has suggested this change for you';
         let gitDiffOutput = '';
         let gitDiffError = '';
         try {
@@ -79,36 +81,39 @@ function run() {
         }
         const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
         if (patches.length) {
-            // await octokit.pulls.deletePendingReview({
-            // owner,
-            // repo,
-            // // @ts-ignore
-            // pull_number: github.context.payload.pull_request?.number,
-            // review_id: 537023988,
-            // });
-            // console.log(
-            // await octokit.pulls.listReviews({
-            // owner,
-            // repo,
-            // // @ts-ignore
-            // pull_number: github.context.payload.pull_request?.number,
-            // })
-            // );
+            // Delete existing review comments from this bot
+            const existingReviews = yield octokit.pulls.listReviews({
+                owner,
+                repo,
+                // @ts-ignore
+                pull_number: (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
+            });
+            yield Promise.all(existingReviews.data
+                .filter(review => review.user.login === 'github-actions[bot]' &&
+                review.body.includes(commentBody))
+                .map((review) => __awaiter(this, void 0, void 0, function* () {
+                return octokit.pulls.deleteReviewComment({
+                    owner,
+                    repo,
+                    comment_id: review.id,
+                });
+            })));
+            // Need to do this serially, otherwise face API errors from GitHub about having multiple pending review requests
             for (const patch of patches) {
                 try {
                     const resp = yield octokit.pulls.createReviewComment({
                         owner,
                         repo,
                         // @ts-ignore
-                        pull_number: (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
+                        pull_number: (_b = github.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
                         body: `
-Something magical has suggested this change for you:
+${commentBody}:
 
 \`\`\`suggestion
 ${patch.added.lines.join('\n')}
 \`\`\`
 `,
-                        commit_id: (_b = GITHUB_EVENT.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha,
+                        commit_id: (_c = GITHUB_EVENT.pull_request) === null || _c === void 0 ? void 0 : _c.head.sha,
                         path: patch.removed.file,
                         side: 'RIGHT',
                         start_side: 'RIGHT',
@@ -128,16 +133,6 @@ ${patch.added.lines.join('\n')}
                     core.error(err);
                 }
             }
-            // for (const promise of promises) {
-            // try {
-            // const resp = await promise;
-            // core.startGroup('patch debug');
-            // core.debug(JSON.stringify(resp, null, 2));
-            // core.endGroup();
-            // } catch (err) {
-            // core.error(err);
-            // }
-            // }
         }
     });
 }
@@ -153,6 +148,12 @@ run();
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.parseGitPatch = void 0;
+/**
+ * TODO: Look into using a package on npm for this
+ *
+ * gitdiff-parser seems like it would fit our usage the best,
+ * but maybe just our simple parsing is good enough here.
+ */
 function parseGitPatch(patch) {
     const lines = patch.split('\n');
     let currentFiles;
