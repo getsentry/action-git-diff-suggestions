@@ -51,7 +51,7 @@ async function run(): Promise<void> {
 
   if (patches.length) {
     // Delete existing review comments from this bot
-    const existingReviews = await octokit.pulls.listReviews({
+    const existingReviews = await octokit.pulls.listReviewComments({
       owner,
       repo,
       // @ts-ignore

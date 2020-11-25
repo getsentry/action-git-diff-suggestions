@@ -82,7 +82,7 @@ function run() {
         const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
         if (patches.length) {
             // Delete existing review comments from this bot
-            const existingReviews = yield octokit.pulls.listReviews({
+            const existingReviews = yield octokit.pulls.listReviewComments({
                 owner,
                 repo,
                 // @ts-ignore
