@@ -1,11 +1,13 @@
-name: 'action-git-diff-suggestions'
-description: 'This GitHub Action will take the current git changes and apply them as GitHub code review suggestions'
-author: 'Sentry'
+name: action-git-diff-suggestions
+description: This GitHub Action will take the current git changes and apply them as GitHub code review suggestions
+author: Sentry
+icon: book-open
+color: purple
 inputs:
   github-token:
-    description: 'github token'
+    description: github token
   message:
-    description: 'The message to prepend the review suggestion'
+    description: The message to prepend the review suggestion
 runs:
-  using: 'node12'
-  main: 'dist/index.js'
+  using: node12
+  main: dist/index.js
