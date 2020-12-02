@@ -2,6 +2,139 @@ module.exports =
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 7056:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createReviewCommentsFromPatch = void 0;
+const core = __importStar(__webpack_require__(2186));
+const parseGitPatch_1 = __webpack_require__(8120);
+const deleteOldReviewComments_1 = __webpack_require__(5302);
+function createReviewCommentsFromPatch({ octokit, owner, repo, commentBody, gitDiff, pullRequest, commitId, }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!gitDiff) {
+            return;
+        }
+        const patches = parseGitPatch_1.parseGitPatch(gitDiff);
+        if (!patches.length) {
+            return;
+        }
+        // Delete existing review comments from this bot
+        yield deleteOldReviewComments_1.deleteOldReviewComments({
+            octokit,
+            owner,
+            repo,
+            commentBody,
+            pullRequest,
+        });
+        // Need to call these APIs serially, otherwise face API errors from
+        // GitHub about having multiple pending review requests
+        for (const patch of patches) {
+            try {
+                yield octokit.pulls.createReviewComment({
+                    owner,
+                    repo,
+                    pull_number: pullRequest,
+                    body: `${commentBody}:
+
+\`\`\`suggestion
+${patch.added.lines.join('\n')}
+\`\`\`
+`,
+                    commit_id: commitId,
+                    path: patch.removed.file,
+                    side: 'RIGHT',
+                    start_side: 'RIGHT',
+                    start_line: patch.removed.start !== patch.removed.end
+                        ? patch.removed.start
+                        : undefined,
+                    line: patch.removed.end,
+                    mediaType: {
+                        previews: ['comfort-fade'],
+                    },
+                });
+            }
+            catch (err) {
+                core.error(err);
+                throw err;
+            }
+        }
+    });
+}
+exports.createReviewCommentsFromPatch = createReviewCommentsFromPatch;
+
+
+/***/ }),
+
+/***/ 5302:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.deleteOldReviewComments = void 0;
+function deleteOldReviewComments({ octokit, owner, repo, commentBody, pullRequest, }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Delete existing review comments from this bot
+        const existingReviews = yield octokit.pulls.listReviewComments({
+            owner,
+            repo,
+            pull_number: pullRequest,
+        });
+        return Promise.all((existingReviews === null || existingReviews === void 0 ? void 0 : existingReviews.data.filter(review => review.user.login === 'github-actions[bot]' &&
+            review.body.includes(commentBody)).map((review) => __awaiter(this, void 0, void 0, function* () {
+            return octokit.pulls.deleteReviewComment({
+                owner,
+                repo,
+                comment_id: review.id,
+            });
+        }))) || []);
+    });
+}
+exports.deleteOldReviewComments = deleteOldReviewComments;
+
+
+/***/ }),
+
 /***/ 3109:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -39,7 +172,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const github = __importStar(__webpack_require__(5438));
 const core = __importStar(__webpack_require__(2186));
 const exec_1 = __webpack_require__(1514);
-const parseGitPatch_1 = __webpack_require__(8120);
+const createReviewCommentsFromPatch_1 = __webpack_require__(7056);
 const { GITHUB_EVENT_PATH } = process.env;
 const { owner, repo } = github.context.repo;
 const token = core.getInput('github-token') || core.getInput('githubToken');
@@ -47,7 +180,7 @@ const octokit = token && github.getOctokit(token);
 // @ts-ignore
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 function run() {
-    var _a, _b, _c;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         if (!octokit) {
             core.debug('No octokit client');
@@ -59,13 +192,13 @@ function run() {
         }
         const commentBody = core.getInput('message') ||
             'Something magical has suggested this change for you';
-        let gitDiffOutput = '';
+        let gitDiff = '';
         let gitDiffError = '';
         try {
             yield exec_1.exec('git', ['diff', '-U0', '--color=never'], {
                 listeners: {
                     stdout: (data) => {
-                        gitDiffOutput += data.toString();
+                        gitDiff += data.toString();
                     },
                     stderr: (data) => {
                         gitDiffError += data.toString();
@@ -79,60 +212,25 @@ function run() {
         if (gitDiffError) {
             core.setFailed(gitDiffError);
         }
-        const patches = parseGitPatch_1.parseGitPatch(gitDiffOutput);
-        if (patches.length) {
-            // Delete existing review comments from this bot
-            const existingReviews = yield octokit.pulls.listReviewComments({
+        try {
+            yield createReviewCommentsFromPatch_1.createReviewCommentsFromPatch({
+                octokit,
                 owner,
                 repo,
+                commentBody,
+                gitDiff,
                 // @ts-ignore
-                pull_number: (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
+                pullRequest: (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number,
+                commitId: (_b = GITHUB_EVENT.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha,
             });
-            yield Promise.all(existingReviews.data
-                .filter(review => review.user.login === 'github-actions[bot]' &&
-                review.body.includes(commentBody))
-                .map((review) => __awaiter(this, void 0, void 0, function* () {
-                return octokit.pulls.deleteReviewComment({
-                    owner,
-                    repo,
-                    comment_id: review.id,
-                });
-            })));
-            // Need to do this serially, otherwise face API errors from GitHub about having multiple pending review requests
-            for (const patch of patches) {
-                try {
-                    const resp = yield octokit.pulls.createReviewComment({
-                        owner,
-                        repo,
-                        // @ts-ignore
-                        pull_number: (_b = github.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.number,
-                        body: `
-${commentBody}:
-
-\`\`\`suggestion
-${patch.added.lines.join('\n')}
-\`\`\`
-`,
-                        commit_id: (_c = GITHUB_EVENT.pull_request) === null || _c === void 0 ? void 0 : _c.head.sha,
-                        path: patch.removed.file,
-                        side: 'RIGHT',
-                        start_side: 'RIGHT',
-                        start_line: patch.removed.start !== patch.removed.end
-                            ? patch.removed.start
-                            : undefined,
-                        line: patch.removed.end,
-                        mediaType: {
-                            previews: ['comfort-fade'],
-                        },
-                    });
-                    core.startGroup('patch debug');
-                    core.debug(JSON.stringify(resp, null, 2));
-                    core.endGroup();
-                }
-                catch (err) {
-                    core.error(err);
-                }
-            }
+        }
+        catch (err) {
+            core.setFailed(err);
+        }
+        // If we have a git diff, then it means that some linter/formatter has changed some files, so
+        // we should fail the build
+        if (!!gitDiff) {
+            core.setFailed(new Error('There were some changed files, please update your PR with the code review suggestions'));
         }
     });
 }

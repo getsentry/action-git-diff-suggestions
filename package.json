@@ -2,7 +2,7 @@
   "name": "action-git-diff-suggestions",
   "version": "0.0.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "GitHub action that takes a git patch and makes GitHub Code Review suggestions",
   "main": "lib/main.js",
   "scripts": {
     "build": "yarn tsc",

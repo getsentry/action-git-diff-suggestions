@@ -61,6 +61,16 @@ async function run(): Promise<void> {
   } catch (err) {
     core.setFailed(err);
   }
+
+  // If we have a git diff, then it means that some linter/formatter has changed some files, so
+  // we should fail the build
+  if (!!gitDiff) {
+    core.setFailed(
+      new Error(
+        'There were some changed files, please update your PR with the code review suggestions'
+      )
+    );
+  }
 }
 
 run();
