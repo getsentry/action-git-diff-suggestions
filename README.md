@@ -16,7 +16,7 @@ See the [Sentry repo](https://github.com/getsentry/sentry/tree/master/.github/wo
 
 | input | required | description |
 | ----- | -------- | ----------- |
-| `github-token` | yes | The GitHub Actions token e.g. `secrets.GITHUB_TOKEN` |
+| `github-token` | no | The GitHub Actions token e.g. `secrets.GITHUB_TOKEN` |
 | `message` | highly recommended | This is string used in the review comment before the suggestion. It is also used to find previous comments to be deleted when the action is re-run. This should be named according to the workflow job so that multiple jobs don't delete each other's reviews. |
 
 
@@ -26,7 +26,6 @@ See the [Sentry repo](https://github.com/getsentry/sentry/tree/master/.github/wo
 - uses: getsentry/action-git-diff-suggestions@main
   with:
     message: 'eslint made the following change'
-    github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Full example
@@ -53,7 +52,6 @@ jobs:
       - uses: getsentry/action-git-diff-suggestions@main
         with:
           message: eslint
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - run: yarn test
 ```
