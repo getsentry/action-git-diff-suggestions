@@ -1,5 +1,10 @@
+# STOP
+
+This doesn't work as intended as you can not leave a review comment on lines that are not modified in the PR. Due to this limitation, this action can potentionally have undesired results.
+
 
 # action-git-diff-suggestions   <a href="https://github.com/getsentry/action-git-diff-suggestions/actions"><img alt="typescript-action status" src="https://github.com/getsentry/action-git-diff-suggestions/workflows/test/badge.svg"></a>
+
 
 This GitHub Action will take the current git changes and apply them as GitHub code review suggestions.
 This is useful to run after running a linter or formatter that automatically makes fixes for you.
